@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Kernel;
+
+define('LARAVEL_START', microtime(true));
+
+/*
+|--------------------------------------------------------------------------
+| Check If The Application Is Under Maintenance
+|--------------------------------------------------------------------------
+*/
+
+if ($maintenance = Application::getInstance()->isDownForMaintenance()) {
+    $response = new \Illuminate\Http\Response('', 503);
+    $response->setContent((new \Illuminate\Foundation\Exceptions\Handler)->renderHttpException($maintenance));
+    $response->send();
+    exit(1);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Register The Auto Loader
+|--------------------------------------------------------------------------
+*/
+
+require_once __DIR__.'/vendor/autoload.php';
+
+/*
+|--------------------------------------------------------------------------
+| Run The Application
+|--------------------------------------------------------------------------
+*/
+
+$app = require_once __DIR__.'/bootstrap/app.php';
+
+$kernel = $app->make(Kernel::class);
+
+$response = $kernel->handle(
+    $request = Illuminate\Http\Request::capture()
+)->send();
+
+$kernel->terminate($request, $response);
